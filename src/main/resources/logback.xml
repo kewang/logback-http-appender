@@ -4,6 +4,7 @@
     <property name="LOG_HOME" value="logs"/>
     <property name="CHARSET" value="UTF-8"/>
     <property name="PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n"/>
+
     <!-- 控制台輸出 -->
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <!-- encoder默認配置為PartternLayoutEncoder    -->
