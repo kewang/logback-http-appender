@@ -25,11 +25,11 @@ public class RedmineAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
         try {
             propertyRedmineProjectId = Integer.valueOf(getContext().getProperty("REDMINE_PROJECT_ID"));
         } catch (Exception e) {
-            e.printStackTrace();
+            addError("Exception", e);
         }
 
         if (checkProperty(propertyRedmineUrl, propertyRedmineApiKey, propertyRedmineProjectId)) {
-            System.out.println("No set REDMINE_URL / REDMINE_API_KEY / REDMINE_PROJECT_ID");
+            addError("No set REDMINE_URL / REDMINE_API_KEY / REDMINE_PROJECT_ID [" + name + "].");
 
             return;
         }
@@ -61,7 +61,7 @@ public class RedmineAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
         try {
             issueManager.createIssue(issue);
         } catch (RedmineException e) {
-            e.printStackTrace();
+            addError("Exception", e);
         }
     }
 }
