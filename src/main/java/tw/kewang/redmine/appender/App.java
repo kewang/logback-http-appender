@@ -8,7 +8,7 @@ public class App {
 
     public static void main(String[] args) {
         try {
-            for (int i = 0; i < 100; i++) {
+            for (int i = 0; i < 5; i++) {
                 LOG.info("Hello World! + {}", i / 0);
             }
         } catch (Exception e) {
