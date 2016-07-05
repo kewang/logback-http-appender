@@ -12,6 +12,7 @@ import com.taskadapter.redmineapi.bean.IssueFactory;
 public class RedmineAppender extends AppenderBase<ILoggingEvent> {
     private String url;
     private String apiKey;
+    private int projectId;
     private RedmineManager redmineManager;
     private IssueManager issueManager;
 
@@ -19,20 +20,32 @@ public class RedmineAppender extends AppenderBase<ILoggingEvent> {
     public void start() {
         String propertyRedmineUrl = getContext().getProperty("REDMINE_URL");
         String propertyRedmineApiKey = getContext().getProperty("REDMINE_API_KEY");
+        int propertyRedmineProjectId = -1;
 
-        if (propertyRedmineUrl == null || propertyRedmineUrl.length() == 0 || propertyRedmineApiKey == null
-                || propertyRedmineApiKey.length() == 0) {
-            System.out.println("No set REDMINE_URL / REDMINE_API_KEY");
+        try {
+            propertyRedmineProjectId = Integer.valueOf(getContext().getProperty("REDMINE_PROJECT_ID"));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        if (checkProperty(propertyRedmineUrl, propertyRedmineApiKey, propertyRedmineProjectId)) {
+            System.out.println("No set REDMINE_URL / REDMINE_API_KEY / REDMINE_PROJECT_ID");
 
             return;
         }
 
         url = propertyRedmineUrl;
         apiKey = propertyRedmineApiKey;
+        projectId = propertyRedmineProjectId;
         redmineManager = RedmineManagerFactory.createWithApiKey(url, apiKey);
         issueManager = redmineManager.getIssueManager();
 
         super.start();
+    }
+
+    private boolean checkProperty(String propertyRedmineUrl, String propertyRedmineApiKey, int propertyRedmineProjectId) {
+        return propertyRedmineUrl == null || propertyRedmineUrl.length() == 0 || propertyRedmineApiKey == null
+                || propertyRedmineApiKey.length() == 0 || propertyRedmineProjectId == -1;
     }
 
     @Override
@@ -41,7 +54,7 @@ public class RedmineAppender extends AppenderBase<ILoggingEvent> {
     }
 
     private void createIssue(ILoggingEvent event) {
-        Issue issue = IssueFactory.create(22, event.getLoggerName());
+        Issue issue = IssueFactory.create(projectId, event.getLoggerName());
 
         issue.setDescription(event.getFormattedMessage());
 
