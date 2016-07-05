@@ -1,7 +1,7 @@
 package tw.kewang.redmine.appender;
 
 import ch.qos.logback.classic.spi.ILoggingEvent;
-import ch.qos.logback.core.AppenderBase;
+import ch.qos.logback.core.UnsynchronizedAppenderBase;
 import com.taskadapter.redmineapi.IssueManager;
 import com.taskadapter.redmineapi.RedmineException;
 import com.taskadapter.redmineapi.RedmineManager;
@@ -9,7 +9,7 @@ import com.taskadapter.redmineapi.RedmineManagerFactory;
 import com.taskadapter.redmineapi.bean.Issue;
 import com.taskadapter.redmineapi.bean.IssueFactory;
 
-public class RedmineAppender extends AppenderBase<ILoggingEvent> {
+public class RedmineAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
     private String url;
     private String apiKey;
     private int projectId;
