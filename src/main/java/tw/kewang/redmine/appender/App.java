@@ -7,6 +7,12 @@ public class App {
     private static final Logger LOG = LoggerFactory.getLogger(App.class);
 
     public static void main(String[] args) {
-        LOG.info("Hello World!");
+        try {
+            for (int i = 0; i < 100; i++) {
+                LOG.info("Hello World! + {}", i / 0);
+            }
+        } catch (Exception e) {
+            LOG.error(e.getMessage());
+        }
     }
 }

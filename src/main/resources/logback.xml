@@ -69,6 +69,8 @@
             <pattern>%d{HH:mm:ss.SSS} %-5level %logger{35} - %msg%n</pattern>
         </encoder>
     </appender>
+    <appender name="HTTP" class="tw.kewang.redmine.appender.HttpAppender">
+    </appender>
     <logger name="org.hibernate.engine.query.HQLQueryPlan" level="DEBUG" additivity="false"/>
     <logger name="com.piedra.logback" level="WARN" additivity="false">
         <appender-ref ref="FILE"/>
@@ -77,6 +79,7 @@
         <appender-ref ref="SYSTEMROLLINGFILE"/>
     </logger>
     <root level="INFO" additivity="false">
+        <appender-ref ref="HTTP"/>
         <appender-ref ref="STDOUT"/>
         <appender-ref ref="ROLLINGFILE"/>
     </root>
