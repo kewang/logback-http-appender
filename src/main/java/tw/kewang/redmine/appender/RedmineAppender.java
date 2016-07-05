@@ -12,40 +12,26 @@ import com.taskadapter.redmineapi.bean.IssueFactory;
 public class RedmineAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
     private String url;
     private String apiKey;
-    private int projectId;
+    private int projectId = -1;
     private RedmineManager redmineManager;
     private IssueManager issueManager;
 
     @Override
     public void start() {
-        String propertyRedmineUrl = getContext().getProperty("REDMINE_URL");
-        String propertyRedmineApiKey = getContext().getProperty("REDMINE_API_KEY");
-        int propertyRedmineProjectId = -1;
-
-        try {
-            propertyRedmineProjectId = Integer.valueOf(getContext().getProperty("REDMINE_PROJECT_ID"));
-        } catch (Exception e) {
-            addError("Exception", e);
-        }
-
-        if (checkProperty(propertyRedmineUrl, propertyRedmineApiKey, propertyRedmineProjectId)) {
-            addError("No set REDMINE_URL / REDMINE_API_KEY / REDMINE_PROJECT_ID [" + name + "].");
+        if (!checkProperty()) {
+            addError("No set url / apiKey / projectId [" + name + "].");
 
             return;
         }
 
-        url = propertyRedmineUrl;
-        apiKey = propertyRedmineApiKey;
-        projectId = propertyRedmineProjectId;
         redmineManager = RedmineManagerFactory.createWithApiKey(url, apiKey);
         issueManager = redmineManager.getIssueManager();
 
         super.start();
     }
 
-    private boolean checkProperty(String propertyRedmineUrl, String propertyRedmineApiKey, int propertyRedmineProjectId) {
-        return propertyRedmineUrl == null || propertyRedmineUrl.length() == 0 || propertyRedmineApiKey == null
-                || propertyRedmineApiKey.length() == 0 || propertyRedmineProjectId == -1;
+    private boolean checkProperty() {
+        return url != null && url.length() != 0 && apiKey != null && apiKey.length() != 0 && projectId != -1;
     }
 
     @Override
@@ -63,5 +49,29 @@ public class RedmineAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
         } catch (RedmineException e) {
             addError("Exception", e);
         }
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public void setApiKey(String apiKey) {
+        this.apiKey = apiKey;
+    }
+
+    public String getApiKey() {
+        return apiKey;
+    }
+
+    public void setProjectId(int projectId) {
+        this.projectId = projectId;
+    }
+
+    public int getProjectId() {
+        return projectId;
     }
 }
