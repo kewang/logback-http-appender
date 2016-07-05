@@ -1,5 +1,6 @@
 package tw.kewang.redmine.appender;
 
+import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.UnsynchronizedAppenderBase;
 import com.taskadapter.redmineapi.IssueManager;
@@ -10,6 +11,7 @@ import com.taskadapter.redmineapi.bean.Issue;
 import com.taskadapter.redmineapi.bean.IssueFactory;
 
 public class RedmineAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
+    private PatternLayoutEncoder encoder;
     private String url;
     private String apiKey;
     private int projectId = -1;
@@ -22,6 +24,18 @@ public class RedmineAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
             addError("No set url / apiKey / projectId [" + name + "].");
 
             return;
+        }
+
+        if (encoder == null) {
+            addError("No encoder set for the appender named [" + name + "].");
+
+            return;
+        }
+
+        try {
+            encoder.init(System.out);
+        } catch (Exception e) {
+            addError("Exception", e);
         }
 
         redmineManager = RedmineManagerFactory.createWithApiKey(url, apiKey);
@@ -42,13 +56,21 @@ public class RedmineAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
     private void createIssue(ILoggingEvent event) {
         Issue issue = IssueFactory.create(projectId, event.getLoggerName());
 
-        issue.setDescription(event.getFormattedMessage());
+        issue.setDescription(encoder.getLayout().doLayout(event));
 
         try {
             issueManager.createIssue(issue);
         } catch (RedmineException e) {
             addError("Exception", e);
         }
+    }
+
+    public PatternLayoutEncoder getEncoder() {
+        return encoder;
+    }
+
+    public void setEncoder(PatternLayoutEncoder encoder) {
+        this.encoder = encoder;
     }
 
     public void setUrl(String url) {

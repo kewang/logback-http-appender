@@ -8,8 +8,8 @@ public class App {
 
     public static void main(String[] args) {
         try {
-            for (int i = 0; i < 5; i++) {
-                LOG.info("Hello World! + {}", i / 0);
+            for (int i = 0; i < 2; i++) {
+                LOG.info("Hello World! + {}", i);
             }
         } catch (Exception e) {
             LOG.error(e.getMessage());

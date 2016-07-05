@@ -1,19 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration debug="false">
-    <contextName>Logback Demo</contextName>
+    <contextName>Redmine-Appender</contextName>
     <property name="LOG_HOME" value="logs"/>
     <property name="CHARSET" value="UTF-8"/>
     <property name="PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n"/>
 
-    <!-- 控制台輸出 -->
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
-        <!-- encoder默認配置為PartternLayoutEncoder    -->
         <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
             <pattern>${PATTERN}</pattern>
             <charset>${CHARSET}</charset>
         </encoder>
     </appender>
-    <!-- 持續輸出的日誌檔案 -->
+
     <appender name="FILE" class="ch.qos.logback.core.FileAppender">
         <file>${LOG_HOME}/myLog.log</file>
         <encoder>
@@ -21,66 +19,20 @@
             <charset>${CHARSET}</charset>
         </encoder>
     </appender>
-    <!-- 按照每天生成日誌文件 -->
-    <appender name="ROLLINGFILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <!--日誌文件輸出的文件名-->
-            <FileNamePattern>${LOG_HOME}/root-%d{yyyy-MM-dd}.log</FileNamePattern>
-            <!--日誌文件保留天數-->
-            <MaxHistory>30</MaxHistory>
-        </rollingPolicy>
+
+    <appender name="HTTP" class="tw.kewang.redmine.appender.RedmineAppender">
+        <url>http://example.com</url>
+        <apiKey>abcdef1234567890</apiKey>
+        <projectId>5566</projectId>
         <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
             <pattern>${PATTERN}</pattern>
             <charset>${CHARSET}</charset>
         </encoder>
-        <!--日誌文件最大的大小-->
-        <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
-            <MaxFileSize>100MB</MaxFileSize>
-        </triggeringPolicy>
     </appender>
-    <!-- 系統用每日生成日誌文件 -->
-    <appender name="SYSTEMROLLINGFILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <!--日誌文件輸出的文件名-->
-            <FileNamePattern>${LOG_HOME}/system-%d{yyyy-MM-dd}.log</FileNamePattern>
-            <!--日誌文件保留天數-->
-            <MaxHistory>30</MaxHistory>
-        </rollingPolicy>
-        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
-            <pattern>${PATTERN}</pattern>
-            <charset>${CHARSET}</charset>
-        </encoder>
-        <!--日誌文件最大的大小-->
-        <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
-            <MaxFileSize>100MB</MaxFileSize>
-        </triggeringPolicy>
-    </appender>
-    <!-- 超出固定大小後壓縮檔案的日誌 -->
-    <appender name="DFILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${LOG_HOME}/debug.log</file>
-        <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
-            <fileNamePattern>${LOG_HOME}/debug.%i.log.zip</fileNamePattern>
-            <minIndex>1</minIndex>
-            <maxIndex>3</maxIndex>
-        </rollingPolicy>
-        <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
-            <maxFileSize>1MB</maxFileSize>
-        </triggeringPolicy>
-        <encoder>
-            <pattern>%d{HH:mm:ss.SSS} %-5level %logger{35} - %msg%n</pattern>
-        </encoder>
-    </appender>
-    <appender name="HTTP" class="tw.kewang.redmine.appender.RedmineAppender"/>
-    <logger name="org.hibernate.engine.query.HQLQueryPlan" level="DEBUG" additivity="false"/>
-    <logger name="com.piedra.logback" level="WARN" additivity="false">
-        <appender-ref ref="FILE"/>
-    </logger>
-    <logger name="system" level="INFO" additivity="false">
-        <appender-ref ref="SYSTEMROLLINGFILE"/>
-    </logger>
+
     <root level="INFO" additivity="false">
         <appender-ref ref="HTTP"/>
         <appender-ref ref="STDOUT"/>
-        <appender-ref ref="ROLLINGFILE"/>
+        <appender-ref ref="FILE"/>
     </root>
 </configuration>
