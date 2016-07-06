@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/redmine-appender.iml" filepath="$PROJECT_DIR$/redmine-appender.iml" />
+      <module fileurl="file://$PROJECT_DIR$/logback-redmine-appender.iml" filepath="$PROJECT_DIR$/logback-redmine-appender.iml" />
     </modules>
   </component>
 </project>

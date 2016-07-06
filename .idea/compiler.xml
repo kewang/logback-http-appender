@@ -22,11 +22,11 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <processorPath useClasspath="true" />
-        <module name="redmine-appender" />
+        <module name="logback-redmine-appender" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
-      <module name="redmine-appender" target="1.5" />
+      <module name="logback-redmine-appender" target="1.5" />
     </bytecodeTargetLevel>
   </component>
 </project>
