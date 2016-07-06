@@ -1,8 +1,8 @@
 package tw.kewang.logback.appender;
 
-import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.UnsynchronizedAppenderBase;
+import ch.qos.logback.core.encoder.LayoutWrappingEncoder;
 import com.taskadapter.redmineapi.IssueManager;
 import com.taskadapter.redmineapi.RedmineException;
 import com.taskadapter.redmineapi.RedmineManager;
@@ -11,7 +11,7 @@ import com.taskadapter.redmineapi.bean.Issue;
 import com.taskadapter.redmineapi.bean.IssueFactory;
 
 public class RedmineAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
-    private PatternLayoutEncoder encoder;
+    private LayoutWrappingEncoder<ILoggingEvent> encoder;
     private String url;
     private String apiKey;
     private int projectId = -1;
@@ -67,11 +67,11 @@ public class RedmineAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
         }
     }
 
-    public PatternLayoutEncoder getEncoder() {
+    public LayoutWrappingEncoder<ILoggingEvent> getEncoder() {
         return encoder;
     }
 
-    public void setEncoder(PatternLayoutEncoder encoder) {
+    public void setEncoder(LayoutWrappingEncoder<ILoggingEvent> encoder) {
         this.encoder = encoder;
     }
 
