@@ -24,6 +24,7 @@
         <url>http://example.com</url> <!-- Your Redmine URL -->
         <apiKey>abcdef1234567890</apiKey> <!-- Your Redmine API key-->
         <projectId>5566</projectId> <!-- Your Redmine Project ID -->
+        <title>Logback Redmine Appender</title> <!-- Your Redmine issue title -->
         <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
             <pattern>${PATTERN}</pattern>
             <charset>${CHARSET}</charset>
