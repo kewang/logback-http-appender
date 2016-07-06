@@ -3,11 +3,11 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>tw.kewang</groupId>
-    <artifactId>logback-redmine-appender</artifactId>
+    <artifactId>logback-http-appender</artifactId>
     <version>0.1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
-    <name>logback-redmine-appender</name>
+    <name>logback-http-appender</name>
     <url>http://maven.apache.org</url>
 
     <properties>
