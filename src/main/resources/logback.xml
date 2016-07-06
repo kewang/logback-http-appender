@@ -20,10 +20,10 @@
         </encoder>
     </appender>
 
-    <appender name="HTTP" class="tw.kewang.logback.appender.RedmineAppender">
-        <url>http://example.com</url>
-        <apiKey>abcdef1234567890</apiKey>
-        <projectId>5566</projectId>
+    <appender name="REDMINE" class="tw.kewang.logback.appender.RedmineAppender">
+        <url>http://example.com</url> <!-- Your Redmine URL -->
+        <apiKey>abcdef1234567890</apiKey> <!-- Your Redmine API key-->
+        <projectId>5566</projectId> <!-- Your Redmine Project ID -->
         <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
             <pattern>${PATTERN}</pattern>
             <charset>${CHARSET}</charset>
@@ -31,7 +31,7 @@
     </appender>
 
     <root level="INFO" additivity="false">
-        <appender-ref ref="HTTP"/>
+        <appender-ref ref="REDMINE"/>
         <appender-ref ref="STDOUT"/>
         <appender-ref ref="FILE"/>
     </root>

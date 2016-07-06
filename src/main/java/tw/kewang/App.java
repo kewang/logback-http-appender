@@ -7,12 +7,14 @@ public class App {
     private static final Logger LOG = LoggerFactory.getLogger(App.class);
 
     public static void main(String[] args) {
+        String abc = null;
+
         try {
-            for (int i = 0; i < 2; i++) {
-                LOG.info("Hello World! + {}", i);
+            if (abc.length() == 0) {
+                LOG.info("No String");
             }
         } catch (Exception e) {
-            LOG.error(e.getMessage());
+            LOG.error("Caught Exception: ", e);
         }
     }
 }
