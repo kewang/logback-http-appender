@@ -3,11 +3,7 @@
 ## How to use
 
 ```xml
-<appender name="REDMINE" class="tw.kewang.logback.appender.RedmineAppender">
-  <url>http://example.com</url> <!-- Your Redmine URL -->
-  <apiKey>abcdef1234567890</apiKey> <!-- Your Redmine API key-->
-  <projectId>5566</projectId> <!-- Your Redmine Project ID -->
-  <title>Logback Redmine Appender</title> <!-- Your Redmine issue title -->
+<appender name="HTTP" class="tw.kewang.logback.appender.HttpAppender">
   <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
     <pattern>${PATTERN}</pattern>
     <charset>${CHARSET}</charset>
