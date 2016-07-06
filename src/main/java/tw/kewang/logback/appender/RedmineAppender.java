@@ -1,6 +1,7 @@
 package tw.kewang.logback.appender;
 
 import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.Layout;
 import ch.qos.logback.core.UnsynchronizedAppenderBase;
 import ch.qos.logback.core.encoder.LayoutWrappingEncoder;
 import com.taskadapter.redmineapi.IssueManager;
@@ -12,6 +13,7 @@ import com.taskadapter.redmineapi.bean.IssueFactory;
 
 public class RedmineAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
     private LayoutWrappingEncoder<ILoggingEvent> encoder;
+    private Layout<ILoggingEvent> layout;
     private String url;
     private String apiKey;
     private int projectId = -1;
@@ -35,6 +37,8 @@ public class RedmineAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
 
         try {
             encoder.init(System.out);
+
+            layout = encoder.getLayout();
         } catch (Exception e) {
             addError("Exception", e);
         }
@@ -58,7 +62,7 @@ public class RedmineAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
     private void createIssue(ILoggingEvent event) {
         Issue issue = IssueFactory.create(projectId, title + " - " + event.getTimeStamp());
 
-        issue.setDescription(encoder.getLayout().doLayout(event));
+        issue.setDescription(layout.doLayout(event));
 
         try {
             issueManager.createIssue(issue);
