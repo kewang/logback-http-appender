@@ -1,4 +1,4 @@
-package tw.kewang.redmine.appender;
+package tw.kewang;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

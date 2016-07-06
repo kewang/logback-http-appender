@@ -1,4 +1,4 @@
-package tw.kewang.redmine.appender;
+package tw.kewang.logback.appender;
 
 import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
 import ch.qos.logback.classic.spi.ILoggingEvent;

@@ -1,4 +1,4 @@
-package tw.kewang.redmine.appender;
+package tw.kewang.logback.appender;
 
 import junit.framework.Test;
 import junit.framework.TestCase;
