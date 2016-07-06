@@ -20,7 +20,7 @@
         </encoder>
     </appender>
 
-    <appender name="HTTP" class="tw.kewang.redmine.appender.RedmineAppender">
+    <appender name="HTTP" class="tw.kewang.logback.appender.RedmineAppender">
         <url>http://example.com</url>
         <apiKey>abcdef1234567890</apiKey>
         <projectId>5566</projectId>
