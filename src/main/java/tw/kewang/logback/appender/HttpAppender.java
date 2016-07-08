@@ -9,9 +9,7 @@ import org.apache.commons.io.FileUtils;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import java.io.File;
-import java.io.IOException;
 import java.nio.charset.Charset;
-import java.util.List;
 
 public class HttpAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
     private LayoutWrappingEncoder<ILoggingEvent> encoder;
@@ -55,13 +53,13 @@ public class HttpAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
     @SuppressWarnings("Since15")
     private void createIssue(ILoggingEvent event) {
         try {
-            String scripts = FileUtils.readFileToString(new File(config), Charset.defaultCharset());
+            File file = new File(getClass().getClassLoader().getResource(config).getFile());
+            String script = FileUtils.readFileToString(file, Charset.defaultCharset());
 
             ScriptEngineManager factory = new ScriptEngineManager();
-
             ScriptEngine engine = factory.getEngineByName("groovy");
 
-            engine.eval(scripts);
+            engine.eval(script);
         } catch (Exception e) {
             addError("Exception", e);
         }
