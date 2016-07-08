@@ -15,5 +15,8 @@
     <orderEntry type="library" name="Maven: ch.qos.logback:logback-classic:1.1.7" level="project" />
     <orderEntry type="library" name="Maven: ch.qos.logback:logback-core:1.1.7" level="project" />
     <orderEntry type="library" name="Maven: org.slf4j:slf4j-api:1.7.20" level="project" />
+    <orderEntry type="library" name="Maven: commons-io:commons-io:2.5" level="project" />
+    <orderEntry type="library" name="Maven: org.codehaus.groovy:groovy-all:2.4.7" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.ivy:ivy:2.4.0" level="project" />
   </component>
 </module>

@@ -4,10 +4,19 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.Layout;
 import ch.qos.logback.core.UnsynchronizedAppenderBase;
 import ch.qos.logback.core.encoder.LayoutWrappingEncoder;
+import org.apache.commons.io.FileUtils;
+
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.util.List;
 
 public class HttpAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
     private LayoutWrappingEncoder<ILoggingEvent> encoder;
     private Layout<ILoggingEvent> layout;
+    private String config;
 
     @Override
     public void start() {
@@ -35,7 +44,7 @@ public class HttpAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
     }
 
     private boolean checkProperty() {
-        return false;
+        return true;
     }
 
     @Override
@@ -43,7 +52,19 @@ public class HttpAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
         createIssue(event);
     }
 
+    @SuppressWarnings("Since15")
     private void createIssue(ILoggingEvent event) {
+        try {
+            String scripts = FileUtils.readFileToString(new File(config), Charset.defaultCharset());
+
+            ScriptEngineManager factory = new ScriptEngineManager();
+
+            ScriptEngine engine = factory.getEngineByName("groovy");
+
+            engine.eval(scripts);
+        } catch (Exception e) {
+            addError("Exception", e);
+        }
     }
 
     public LayoutWrappingEncoder<ILoggingEvent> getEncoder() {
@@ -52,5 +73,13 @@ public class HttpAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
 
     public void setEncoder(LayoutWrappingEncoder<ILoggingEvent> encoder) {
         this.encoder = encoder;
+    }
+
+    public String getConfig() {
+        return config;
+    }
+
+    public void setConfig(String config) {
+        this.config = config;
     }
 }
