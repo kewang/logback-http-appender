@@ -21,7 +21,7 @@
     </appender>
 
     <appender name="HTTP" class="tw.kewang.logback.appender.HttpAppender">
-        <config>MyParser.groovy</config>
+        <config>Redmine.groovy</config>
         <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
             <pattern>${PATTERN}</pattern>
             <charset>${CHARSET}</charset>
