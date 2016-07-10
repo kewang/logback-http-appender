@@ -52,6 +52,8 @@ public class HttpAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
     private void normalizeContentType() {
         if (contentType.equalsIgnoreCase("json")) {
             contentType = "application/json";
+        } else if (contentType.equalsIgnoreCase("xml")) {
+            contentType = "application/xml";
         }
     }
 
@@ -74,10 +76,13 @@ public class HttpAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
         try {
             URL urlObj = new URL(url);
 
+            addInfo("URL: " + url);
+
             conn = (HttpURLConnection) urlObj.openConnection();
 
             conn.setRequestMethod(method);
-            conn.setRequestProperty("Content-Type", contentType);
+
+            transformHeaders(conn);
 
             boolean isOk = false;
 
@@ -109,20 +114,6 @@ public class HttpAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
         }
     }
 
-    private boolean sendNoBodyRequest(HttpURLConnection conn) throws IOException {
-        return showResponse(conn);
-    }
-
-    private boolean sendBodyRequest(HttpURLConnection conn) throws IOException {
-        conn.setDoOutput(true);
-
-        transformHeaders(conn);
-
-        IOUtils.write(body, conn.getOutputStream(), Charset.defaultCharset());
-
-        return showResponse(conn);
-    }
-
     private void transformHeaders(HttpURLConnection conn) {
         JSONObject jObj = new JSONObject(headers);
 
@@ -131,6 +122,22 @@ public class HttpAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
 
             conn.setRequestProperty(key, value);
         }
+
+        conn.setRequestProperty("Content-Type", contentType);
+    }
+
+    private boolean sendNoBodyRequest(HttpURLConnection conn) throws IOException {
+        return showResponse(conn);
+    }
+
+    private boolean sendBodyRequest(HttpURLConnection conn) throws IOException {
+        conn.setDoOutput(true);
+
+        addInfo("Body: " + body);
+
+        IOUtils.write(body, conn.getOutputStream(), Charset.defaultCharset());
+
+        return showResponse(conn);
     }
 
     private boolean showResponse(HttpURLConnection conn) throws IOException {
