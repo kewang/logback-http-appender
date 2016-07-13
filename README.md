@@ -1,5 +1,7 @@
 # logback-http-appender
 
+[![Build Status](https://travis-ci.org/kewang/logback-http-appender.svg?branch=master)](https://travis-ci.org/kewang/logback-http-appender)
+
 ## How to use
 
 ```xml
