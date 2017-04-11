@@ -16,6 +16,7 @@ import ch.qos.logback.core.net.ssl.SSLConfiguration;
 public class HttpAuthenticationAppender extends HttpAppenderAbstract {
 
 	private static final String SEPARATOR_BASIC_AUTHENTICATION = ":";
+	
 	protected Authentication authentication;
 	protected String encondedUserPassword;
 	protected SSLConfiguration sslConfiguration;
@@ -24,9 +25,9 @@ public class HttpAuthenticationAppender extends HttpAppenderAbstract {
 	@Override
 	public void start() {
 		super.start();
-		
 		if (authentication == null || authentication.isConfigured() == false) {
 			addError("No authentication was configured. Use <authentication> to specify the <username> and the <password> for Basic Authentication.");
+			return;
 		}
 
 		String userPassword = authentication.getUsername() + SEPARATOR_BASIC_AUTHENTICATION + authentication.getPassword();

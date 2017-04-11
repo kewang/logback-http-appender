@@ -26,14 +26,24 @@ public class HttpAppender extends HttpAppenderAbstract {
 	@Override
 	public void start() {
 		normalizeMethodName();
+		
+		super.start();
+	}
+	
+	protected void checkProperties() {
+		if (isStringEmptyOrNull(url)) {
+			url = DEFAULT_URL;
+			addInfo(String.format(MSG_NOT_SET, "url", url));
+		} else {
+			addInfo(String.format(MSG_USING, "url", url));
+		}
+		
 		if (isStringEmptyOrNull(method)) {
 			method = DEFAULT_METHOD;
 			addInfo(String.format(MSG_NOT_SET, "method", method));
 		} else {
 			addInfo(String.format(MSG_USING, "method", method));
 		}
-
-		super.start();
 	}
 
 	@Override

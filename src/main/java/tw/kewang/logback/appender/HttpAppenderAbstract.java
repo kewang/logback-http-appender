@@ -63,19 +63,19 @@ public abstract class HttpAppenderAbstract extends UnsynchronizedAppenderBase<IL
 
 	@Override
 	public void start() {
-		normalizeContentType();
-		
 		if (encoder == null) {
 			addError("No encoder was configured. Use <encoder> to specify the fully qualified class name of the encoder to use");
 			return;
 		}
 		
 		checkProperties();
+		normalizeContentType();
+		
 		encoder.start();
 		super.start();
 	}
 
-	private void checkProperties() {
+	protected void checkProperties() {
 		if (isStringEmptyOrNull(protocol)) {
 			protocol = DEFAULT_PROTOCOL;
 			addInfo(String.format(MSG_NOT_SET, "protocol", protocol));
@@ -117,10 +117,9 @@ public abstract class HttpAppenderAbstract extends UnsynchronizedAppenderBase<IL
 		} else {
 			addInfo(String.format(MSG_USING, "reconnectDelay", reconnectDelay));
 		}
-
 	}
 
-	private void normalizeContentType() {
+	protected void normalizeContentType() {
 		if (contentType.equalsIgnoreCase("json")) {
 			contentType = "application/json";
 		} else if (contentType.equalsIgnoreCase("xml")) {
@@ -184,7 +183,7 @@ public abstract class HttpAppenderAbstract extends UnsynchronizedAppenderBase<IL
 		}
 
 		String response = IOUtils.toString(conn.getInputStream(), Charset.defaultCharset());
-		addInfo(response);
+		addInfo(String.format("Response result: %s", response));
 		return true;
 	}
 	
