@@ -1,0 +1,342 @@
+package tw.kewang.logback.appender;
+
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.nio.charset.Charset;
+import java.time.Duration;
+
+import org.apache.commons.io.IOUtils;
+import org.json.JSONObject;
+
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.Layout;
+import ch.qos.logback.core.UnsynchronizedAppenderBase;
+import ch.qos.logback.core.encoder.Encoder;
+
+public abstract class HttpAppenderAbstract extends UnsynchronizedAppenderBase<ILoggingEvent> {
+
+	/**
+	 * Defines default port to get access.
+	 */
+	protected final static int DEFAULT_PORT = 8080;
+
+	/**
+	 * Defines default protocol to use between HTTP or HTTPS.
+	 */
+	protected final static String DEFAULT_PROTOCOL = "http";
+
+	/**
+	 * Defines default content type to send data.
+	 */
+	protected final static String DEFAULT_CONTENT_TYPE = "json";
+
+	/**
+	 * Defines default URL server.
+	 */
+	protected final static String DEFAULT_URL = "localhost";
+
+	/**
+	 * Defines default method to send data.
+	 */
+	protected final static String DEFAULT_METHOD = "POST";
+	
+	/**
+	 * Defines default server path.
+	 */
+	protected final static String DEFAULT_PATH = "/";
+	
+	/**
+	 * Defines default time in seconds to try to reconnect if connection is lost.
+	 */
+	protected final static int DEFAULT_RECONNECT_DELAY = 30;
+
+	protected Encoder<ILoggingEvent> encoder;
+	protected Layout<ILoggingEvent> layout;
+	protected String method;
+	protected String url;
+
+	protected String protocol;
+	protected String path;
+	protected int port;
+	protected String contentType;
+	protected String body;
+	protected String headers;
+	protected int reconnectDelay;
+
+	@Override
+	public void start() {
+		normalizeMethodName();
+		normalizeContentType();
+		
+		if (encoder == null) {
+			addError("No encoder set for the appender named [" + name + "], please use <encoder> to configure.");
+			return;
+		}
+		
+		checkProperties();
+		encoder.start();
+		super.start();
+	}
+
+	private void checkProperties() {
+		final String msgUsing = "Using %s: %s";
+		final String msgNotSet = "Assuming default value for %s: %s";
+
+		if (isEmptyOrNull(protocol)) {
+			protocol = DEFAULT_PROTOCOL;
+			addInfo(String.format(msgNotSet, "protocol", protocol));
+		} else {
+			addInfo(String.format(msgUsing, "protocol", protocol));
+		}
+
+		if (isEmptyOrNull(url)) {
+			url = DEFAULT_URL;
+			addInfo(String.format(msgNotSet, "url", url));
+		} else {
+			addInfo(String.format(msgUsing, "url", url));
+		}
+		
+		if (isEmptyOrNull(path)) {
+			path = DEFAULT_PATH;
+			addInfo(String.format(msgNotSet, "path", path));
+		} else {
+			addInfo(String.format(msgUsing, "path", path));
+		}
+
+		if (port == 0) {
+			port = DEFAULT_PORT;
+			addInfo(String.format(msgNotSet, "port", port));
+		} else {
+			addInfo(String.format(msgUsing, "port", port));
+		}
+
+		if (isEmptyOrNull(contentType)) {
+			contentType = DEFAULT_CONTENT_TYPE;
+			addInfo(String.format(msgNotSet, "contentType", contentType));
+		} else {
+			addInfo(String.format(msgUsing, "contentType", contentType));
+		}
+
+		if (isEmptyOrNull(method)) {
+			method = DEFAULT_METHOD;
+			addInfo(String.format(msgNotSet, "method", method));
+		} else {
+			addInfo(String.format(msgUsing, "method", method));
+		}
+		
+		if (reconnectDelay == 0) {
+			reconnectDelay = DEFAULT_RECONNECT_DELAY;
+			addInfo(String.format(msgNotSet, "reconnectDelay", reconnectDelay));
+		} else {
+			addInfo(String.format(msgUsing, "reconnectDelay", reconnectDelay));
+		}
+
+	}
+
+	private void normalizeContentType() {
+		if (contentType.equalsIgnoreCase("json")) {
+			contentType = "application/json";
+		} else if (contentType.equalsIgnoreCase("xml")) {
+			contentType = "application/xml";
+		}
+	}
+
+	private void normalizeMethodName() {
+		method = method.toUpperCase();
+	}
+
+	@Override
+	public void append(ILoggingEvent event) {
+		try {
+			HttpURLConnection conn = openConnection();
+			System.out.println(conn);
+			transformHeaders(conn);
+
+			boolean isOk = false;
+
+			byte[] objEncoded = encoder.encode(event);
+			if (method.equals("GET") || method.equals("DELETE")) {
+				isOk = sendNoBodyRequest(conn);
+			} else if (method.equals("POST") || method.equals("PUT")) {
+				isOk = sendBodyRequest(objEncoded, conn);
+			}
+
+			if (!isOk) {
+				addError("Not OK");
+			}
+		} catch (IOException e) {
+			addError("Houve um erro na conexão: ", e);
+			reconnect(event);
+		}
+	}
+
+	protected void transformHeaders(HttpURLConnection conn) {
+		conn.setRequestProperty("Content-Type", contentType);
+		if (headers == null || headers.isEmpty()) {
+			return;
+		}
+
+		JSONObject jObj = new JSONObject(headers);
+		for (String key : jObj.keySet()) {
+			String value = (String) jObj.get(key);
+			conn.setRequestProperty(key, value);
+		}
+	}
+
+	protected boolean sendNoBodyRequest(HttpURLConnection conn) throws IOException {
+		return showResponse(conn);
+	}
+
+	protected boolean sendBodyRequest(byte[] objEncoded, HttpURLConnection conn) throws IOException {
+		conn.setDoOutput(true);
+
+		if (body != null) {
+			addInfo("Body: " + body);
+			IOUtils.write(body, conn.getOutputStream(), Charset.defaultCharset());
+		} else {
+			IOUtils.write(objEncoded, conn.getOutputStream());
+		}
+
+		return showResponse(conn);
+	}
+	
+	protected void reconnect(ILoggingEvent event) {
+		try {
+			addInfo(String.format("Trying to reconnect in %s seconds", reconnectDelay));
+			Thread.sleep(Duration.ofSeconds(reconnectDelay).toMillis());
+			append(event);
+		} catch (InterruptedException e1) {
+			addError("Erro trying to reconnect: ", e1);
+			e1.printStackTrace();
+		}	
+	}
+
+	protected boolean showResponse(HttpURLConnection conn) throws IOException {
+		int responseCode = conn.getResponseCode();
+
+		if (responseCode != HttpURLConnection.HTTP_OK) {
+			addError(String.format("Error to send logs: %s", conn));
+			return false;
+		}
+
+		String response = IOUtils.toString(conn.getInputStream(), Charset.defaultCharset());
+		addInfo(response);
+		return true;
+	}
+	
+	protected HttpURLConnection openConnection() {
+		HttpURLConnection conn = null;
+		try {
+			URL urlObj = new URL(protocol, url, port, path);
+			addInfo("URL: " + urlObj.toString());
+			conn = (HttpURLConnection) urlObj.openConnection();
+			conn.setRequestMethod(method);
+			return conn;
+		} catch (Exception e) {
+			addError("Error to open connection Exception: ", e);
+			return null;
+		} finally {
+			try {
+				if (conn != null) {
+					conn.disconnect();
+				}
+			} catch (Exception e) {
+				addError("Error to open connection Exception: ", e);
+				return null;
+			}
+		}
+	}
+
+	public Layout<ILoggingEvent> getLayout() {
+		return layout;
+	}
+
+	public void setLayout(Layout<ILoggingEvent> layout) {
+		this.layout = layout;
+	}
+
+	public Encoder<ILoggingEvent> getEncoder() {
+		return encoder;
+	}
+
+	public void setEncoder(Encoder<ILoggingEvent> encoder) {
+		this.encoder = encoder;
+	}
+
+	public String getMethod() {
+		return method;
+	}
+
+	public void setMethod(String method) {
+		this.method = method;
+	}
+
+	public String getUrl() {
+		return url;
+	}
+
+	public void setUrl(String url) {
+		this.url = url;
+	}
+
+	public String getContentType() {
+		return contentType;
+	}
+
+	public void setContentType(String contentType) {
+		this.contentType = contentType;
+	}
+
+	public String getBody() {
+		return body;
+	}
+
+	public void setBody(String body) {
+		this.body = body;
+	}
+
+	public String getHeaders() {
+		return headers;
+	}
+
+	public void setHeaders(String headers) {
+		this.headers = headers;
+	}
+
+	public int getPort() {
+		return port;
+	}
+
+	public String getProtocol() {
+		return protocol;
+	}
+
+	public void setProtocol(String protocol) {
+		this.protocol = protocol;
+	}
+
+	public void setPort(int port) {
+		this.port = port;
+	}
+
+	public String getPath() {
+		return path;
+	}
+	
+	public void setPath(String path) {
+		this.path = path;
+	}
+	
+	public int getReconnectDelay() {
+		return reconnectDelay;
+	}
+	
+	public void setReconnectDelay(int reconnectDelay) {
+		this.reconnectDelay = reconnectDelay;
+	}
+	
+	protected static boolean isEmptyOrNull(String value){
+		return value == null || value.isEmpty();
+	}
+}

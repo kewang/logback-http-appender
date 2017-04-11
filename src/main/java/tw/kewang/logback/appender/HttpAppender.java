@@ -1,212 +1,200 @@
 package tw.kewang.logback.appender;
 
-import ch.qos.logback.classic.spi.ILoggingEvent;
-import ch.qos.logback.core.Layout;
-import ch.qos.logback.core.UnsynchronizedAppenderBase;
-import ch.qos.logback.core.encoder.LayoutWrappingEncoder;
-import org.apache.commons.io.IOUtils;
-import org.json.JSONObject;
-
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.Charset;
 
+import org.apache.commons.io.IOUtils;
+import org.json.JSONObject;
+
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.Layout;
+import ch.qos.logback.core.UnsynchronizedAppenderBase;
+import ch.qos.logback.core.encoder.Encoder;
+import ch.qos.logback.core.net.ssl.SSLConfiguration;
+
 public class HttpAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
-    private LayoutWrappingEncoder<ILoggingEvent> encoder;
-    private Layout<ILoggingEvent> layout;
-    private String method;
-    private String url;
-    private String contentType;
-    private String body;
-    private String headers;
 
-    @Override
-    public void start() {
-        normalizeMethodName();
-        normalizeContentType();
+	protected Encoder<ILoggingEvent> encoder;
+	protected Layout<ILoggingEvent> layout;
+	protected String method;
+	protected String url;
 
-        if (!checkProperty()) {
-            addError("No set method / url / contentType / body / headers [" + name + "].");
+	protected String protocol;
+	protected String path;
+	protected int port;
+	protected String contentType;
+	protected String body;
+	protected String headers;
+	protected SSLConfiguration sslConfiguration;
 
-            return;
-        }
+	@Override
+	public void append(ILoggingEvent event) {
+		createIssue(event);
+	}
 
-        if (encoder == null) {
-            addError("No encoder set for the appender named [" + name + "].");
+	public void createIssue(ILoggingEvent event) {
+		HttpURLConnection conn = null;
 
-            return;
-        }
+		try {
+			URL urlObj = new URL(protocol, url, port, "/");
+			conn = (HttpURLConnection) urlObj.openConnection();
+			conn.setRequestMethod(method);
+			transformHeaders(conn);
 
-        try {
-            encoder.init(System.out);
+			boolean isOk = false;
+			byte[] objEncoded = encoder.encode(event);
+			if (method.equals("GET") || method.equals("DELETE")) {
+				isOk = sendNoBodyRequest(conn);
+			} else if (method.equals("POST") || method.equals("PUT")) {
+				isOk = sendBodyRequest(objEncoded, conn);
+			}
 
-            layout = encoder.getLayout();
-        } catch (Exception e) {
-            addError("Exception", e);
-        }
+			if (!isOk) {
+				addError("Not OK");
+				return;
+			}
+		} catch (Exception e) {
+			addError("Exception", e);
+			return;
+		} finally {
+			try {
+				if (conn != null) {
+					conn.disconnect();
+				}
+			} catch (Exception e) {
+				addError("Exception", e);
+				return;
+			}
+		}
+	}
 
-        super.start();
-    }
+	protected void transformHeaders(HttpURLConnection conn) {
+		conn.setRequestProperty("Content-Type", contentType);
+		if (headers == null || headers.isEmpty()) {
+			return;
+		}
 
-    private void normalizeContentType() {
-        if (contentType.equalsIgnoreCase("json")) {
-            contentType = "application/json";
-        } else if (contentType.equalsIgnoreCase("xml")) {
-            contentType = "application/xml";
-        }
-    }
+		JSONObject jObj = new JSONObject(headers);
+		for (String key : jObj.keySet()) {
+			String value = (String) jObj.get(key);
+			conn.setRequestProperty(key, value);
+		}
 
-    private void normalizeMethodName() {
-        method = method.toUpperCase();
-    }
+	}
 
-    private boolean checkProperty() {
-        return true;
-    }
+	protected boolean sendNoBodyRequest(HttpURLConnection conn) throws IOException {
+		return showResponse(conn);
+	}
 
-    @Override
-    public void append(ILoggingEvent event) {
-        createIssue(event);
-    }
+	protected boolean sendBodyRequest(byte[] objEncoded, HttpURLConnection conn) throws IOException {
+		conn.setDoOutput(true);
 
-    private void createIssue(ILoggingEvent event) {
-        HttpURLConnection conn = null;
+		if (body != null) {
+			addInfo("Body: " + body);
+			IOUtils.write(body, conn.getOutputStream(), Charset.defaultCharset());
+		} else {
+			IOUtils.write(objEncoded, conn.getOutputStream());
+		}
 
-        try {
-            URL urlObj = new URL(url);
+		return showResponse(conn);
+	}
 
-            addInfo("URL: " + url);
+	private boolean showResponse(HttpURLConnection conn) throws IOException {
+		int responseCode = conn.getResponseCode();
 
-            conn = (HttpURLConnection) urlObj.openConnection();
+		if (responseCode != HttpURLConnection.HTTP_OK) {
+			addError(String.format("Error to send logs: %s", conn));
+			return false;
+		}
 
-            conn.setRequestMethod(method);
+		String response = IOUtils.toString(conn.getInputStream(), Charset.defaultCharset());
+		addInfo(response);
+		return true;
+	}
 
-            transformHeaders(conn);
+	public Layout<ILoggingEvent> getLayout() {
+		return layout;
+	}
 
-            boolean isOk = false;
+	public void setLayout(Layout<ILoggingEvent> layout) {
+		this.layout = layout;
+	}
 
-            if (method.equals("GET") || method.equals("DELETE")) {
-                isOk = sendNoBodyRequest(conn);
-            } else if (method.equals("POST") || method.equals("PUT")) {
-                isOk = sendBodyRequest(conn);
-            }
+	public Encoder<ILoggingEvent> getEncoder() {
+		return encoder;
+	}
 
-            if (!isOk) {
-                addError("Not OK");
+	public void setEncoder(Encoder<ILoggingEvent> encoder) {
+		this.encoder = encoder;
+	}
 
-                return;
-            }
-        } catch (Exception e) {
-            addError("Exception", e);
+	public String getMethod() {
+		return method;
+	}
 
-            return;
-        } finally {
-            try {
-                if (conn != null) {
-                    conn.disconnect();
-                }
-            } catch (Exception e) {
-                addError("Exception", e);
+	public void setMethod(String method) {
+		this.method = method;
+	}
 
-                return;
-            }
-        }
-    }
+	public String getUrl() {
+		return url;
+	}
 
-    private void transformHeaders(HttpURLConnection conn) {
-        JSONObject jObj = new JSONObject(headers);
+	public void setUrl(String url) {
+		this.url = url;
+	}
 
-        for (String key : jObj.keySet()) {
-            String value = (String) jObj.get(key);
+	public String getContentType() {
+		return contentType;
+	}
 
-            conn.setRequestProperty(key, value);
-        }
+	public void setContentType(String contentType) {
+		this.contentType = contentType;
+	}
 
-        conn.setRequestProperty("Content-Type", contentType);
-    }
+	public String getBody() {
+		return body;
+	}
 
-    private boolean sendNoBodyRequest(HttpURLConnection conn) throws IOException {
-        return showResponse(conn);
-    }
+	public void setBody(String body) {
+		this.body = body;
+	}
 
-    private boolean sendBodyRequest(HttpURLConnection conn) throws IOException {
-        conn.setDoOutput(true);
+	public String getHeaders() {
+		return headers;
+	}
 
-        addInfo("Body: " + body);
+	public void setHeaders(String headers) {
+		this.headers = headers;
+	}
 
-        IOUtils.write(body, conn.getOutputStream(), Charset.defaultCharset());
+	public SSLConfiguration getSsl() {
+		return this.sslConfiguration;
+	}
 
-        return showResponse(conn);
-    }
+	public int getPort() {
+		return port;
+	}
 
-    private boolean showResponse(HttpURLConnection conn) throws IOException {
-        int responseCode = conn.getResponseCode();
+	public String getProtocol() {
+		return protocol;
+	}
 
-        if (responseCode != HttpURLConnection.HTTP_OK) {
-            return false;
-        }
+	public void setProtocol(String protocol) {
+		this.protocol = protocol;
+	}
 
-        String response = IOUtils.toString(conn.getInputStream(), Charset.defaultCharset());
+	public void setPort(int port) {
+		this.port = port;
+	}
 
-        addInfo(response);
-
-        return true;
-    }
-
-    public Layout<ILoggingEvent> getLayout() {
-        return layout;
-    }
-
-    public void setLayout(Layout<ILoggingEvent> layout) {
-        this.layout = layout;
-    }
-
-    public LayoutWrappingEncoder<ILoggingEvent> getEncoder() {
-        return encoder;
-    }
-
-    public void setEncoder(LayoutWrappingEncoder<ILoggingEvent> encoder) {
-        this.encoder = encoder;
-    }
-
-    public String getMethod() {
-        return method;
-    }
-
-    public void setMethod(String method) {
-        this.method = method;
-    }
-
-    public String getUrl() {
-        return url;
-    }
-
-    public void setUrl(String url) {
-        this.url = url;
-    }
-
-    public String getContentType() {
-        return contentType;
-    }
-
-    public void setContentType(String contentType) {
-        this.contentType = contentType;
-    }
-
-    public String getBody() {
-        return body;
-    }
-
-    public void setBody(String body) {
-        this.body = body;
-    }
-
-    public String getHeaders() {
-        return headers;
-    }
-
-    public void setHeaders(String headers) {
-        this.headers = headers;
-    }
+	public String getPath() {
+		return path;
+	}
+	
+	public void setPath(String path) {
+		this.path = path;
+	}
 }
