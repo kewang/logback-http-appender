@@ -35,11 +35,6 @@ public abstract class HttpAppenderAbstract extends UnsynchronizedAppenderBase<IL
 	 * Defines default URL server.
 	 */
 	protected final static String DEFAULT_URL = "localhost";
-
-	/**
-	 * Defines default method to send data.
-	 */
-	protected final static String DEFAULT_METHOD = "POST";
 	
 	/**
 	 * Defines default server path.
@@ -50,10 +45,12 @@ public abstract class HttpAppenderAbstract extends UnsynchronizedAppenderBase<IL
 	 * Defines default time in seconds to try to reconnect if connection is lost.
 	 */
 	protected final static int DEFAULT_RECONNECT_DELAY = 30;
+	
+	protected final String MSG_USING = "Using %s: %s";
+	protected final String MSG_NOT_SET = "Assuming default value for %s: %s";
 
 	protected Encoder<ILoggingEvent> encoder;
 	protected Layout<ILoggingEvent> layout;
-	protected String method;
 	protected String url;
 
 	protected String protocol;
@@ -66,7 +63,6 @@ public abstract class HttpAppenderAbstract extends UnsynchronizedAppenderBase<IL
 
 	@Override
 	public void start() {
-		normalizeMethodName();
 		normalizeContentType();
 		
 		if (encoder == null) {
@@ -80,56 +76,46 @@ public abstract class HttpAppenderAbstract extends UnsynchronizedAppenderBase<IL
 	}
 
 	private void checkProperties() {
-		final String msgUsing = "Using %s: %s";
-		final String msgNotSet = "Assuming default value for %s: %s";
-
 		if (isStringEmptyOrNull(protocol)) {
 			protocol = DEFAULT_PROTOCOL;
-			addInfo(String.format(msgNotSet, "protocol", protocol));
+			addInfo(String.format(MSG_NOT_SET, "protocol", protocol));
 		} else {
-			addInfo(String.format(msgUsing, "protocol", protocol));
+			addInfo(String.format(MSG_USING, "protocol", protocol));
 		}
 
 		if (isStringEmptyOrNull(url)) {
 			url = DEFAULT_URL;
-			addInfo(String.format(msgNotSet, "url", url));
+			addInfo(String.format(MSG_NOT_SET, "url", url));
 		} else {
-			addInfo(String.format(msgUsing, "url", url));
+			addInfo(String.format(MSG_USING, "url", url));
 		}
 		
 		if (isStringEmptyOrNull(path)) {
 			path = DEFAULT_PATH;
-			addInfo(String.format(msgNotSet, "path", path));
+			addInfo(String.format(MSG_NOT_SET, "path", path));
 		} else {
-			addInfo(String.format(msgUsing, "path", path));
+			addInfo(String.format(MSG_USING, "path", path));
 		}
 
 		if (port == 0) {
 			port = DEFAULT_PORT;
-			addInfo(String.format(msgNotSet, "port", port));
+			addInfo(String.format(MSG_NOT_SET, "port", port));
 		} else {
-			addInfo(String.format(msgUsing, "port", port));
+			addInfo(String.format(MSG_USING, "port", port));
 		}
 
 		if (isStringEmptyOrNull(contentType)) {
 			contentType = DEFAULT_CONTENT_TYPE;
-			addInfo(String.format(msgNotSet, "contentType", contentType));
+			addInfo(String.format(MSG_NOT_SET, "contentType", contentType));
 		} else {
-			addInfo(String.format(msgUsing, "contentType", contentType));
-		}
-
-		if (isStringEmptyOrNull(method)) {
-			method = DEFAULT_METHOD;
-			addInfo(String.format(msgNotSet, "method", method));
-		} else {
-			addInfo(String.format(msgUsing, "method", method));
+			addInfo(String.format(MSG_USING, "contentType", contentType));
 		}
 		
 		if (reconnectDelay == 0) {
 			reconnectDelay = DEFAULT_RECONNECT_DELAY;
-			addInfo(String.format(msgNotSet, "reconnectDelay", reconnectDelay));
+			addInfo(String.format(MSG_NOT_SET, "reconnectDelay", reconnectDelay));
 		} else {
-			addInfo(String.format(msgUsing, "reconnectDelay", reconnectDelay));
+			addInfo(String.format(MSG_USING, "reconnectDelay", reconnectDelay));
 		}
 
 	}
@@ -142,29 +128,13 @@ public abstract class HttpAppenderAbstract extends UnsynchronizedAppenderBase<IL
 		}
 	}
 
-	private void normalizeMethodName() {
-		method = method.toUpperCase();
-	}
-
 	@Override
 	public void append(ILoggingEvent event) {
 		try {
 			HttpURLConnection conn = openConnection();
-			System.out.println(conn);
 			transformHeaders(conn);
-
-			boolean isOk = false;
-
 			byte[] objEncoded = encoder.encode(event);
-			if (method.equals("GET") || method.equals("DELETE")) {
-				isOk = sendNoBodyRequest(conn);
-			} else if (method.equals("POST") || method.equals("PUT")) {
-				isOk = sendBodyRequest(objEncoded, conn);
-			}
-
-			if (!isOk) {
-				addError("Not OK");
-			}
+			sendBodyRequest(objEncoded, conn);
 		} catch (IOException e) {
 			addError("Houve um erro na conexão: ", e);
 			reconnect(event);
@@ -190,14 +160,7 @@ public abstract class HttpAppenderAbstract extends UnsynchronizedAppenderBase<IL
 
 	protected boolean sendBodyRequest(byte[] objEncoded, HttpURLConnection conn) throws IOException {
 		conn.setDoOutput(true);
-
-		if (body != null) {
-			addInfo("Body: " + body);
-			IOUtils.write(body, conn.getOutputStream(), Charset.defaultCharset());
-		} else {
-			IOUtils.write(objEncoded, conn.getOutputStream());
-		}
-
+		IOUtils.write(objEncoded, conn.getOutputStream());
 		return showResponse(conn);
 	}
 	
@@ -231,7 +194,7 @@ public abstract class HttpAppenderAbstract extends UnsynchronizedAppenderBase<IL
 			URL urlObj = new URL(protocol, url, port, path);
 			addInfo("URL: " + urlObj.toString());
 			conn = (HttpURLConnection) urlObj.openConnection();
-			conn.setRequestMethod(method);
+			conn.setRequestMethod("POST");
 			return conn;
 		} catch (Exception e) {
 			addError("Error to open connection Exception: ", e);
@@ -263,15 +226,7 @@ public abstract class HttpAppenderAbstract extends UnsynchronizedAppenderBase<IL
 	public void setEncoder(Encoder<ILoggingEvent> encoder) {
 		this.encoder = encoder;
 	}
-
-	public String getMethod() {
-		return method;
-	}
-
-	public void setMethod(String method) {
-		this.method = method;
-	}
-
+	
 	public String getUrl() {
 		return url;
 	}

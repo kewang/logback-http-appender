@@ -24,7 +24,7 @@ public class HttpAuthenticationAppender extends HttpAppenderAbstract {
 	@Override
 	public void start() {
 		super.start();
-
+		
 		if (authentication == null || authentication.isConfigured() == false) {
 			addError("No authentication was configured. Use <authentication> to specify the <username> and the <password> for Basic Authentication.");
 		}
@@ -41,10 +41,9 @@ public class HttpAuthenticationAppender extends HttpAppenderAbstract {
 		HttpURLConnection conn = null;
 		try {
 			URL urlObj = new URL(protocol, url, port, path);
-			addInfo("URL: " + urlObj.toString());
 			conn = (HttpURLConnection) urlObj.openConnection();
 			conn.setRequestProperty("Authorization", "Basic " + encondedUserPassword);
-			conn.setRequestMethod(method);
+			conn.setRequestMethod("POST");
 			return conn;
 		} catch (Exception e) {
 			addError("Error to open connection Exception: ", e);
@@ -65,27 +64,16 @@ public class HttpAuthenticationAppender extends HttpAppenderAbstract {
 	public void append(ILoggingEvent event) {
 		try {
 			HttpURLConnection conn = openConnection();
-			System.out.println(conn);
 			transformHeaders(conn);
-
-			boolean isOk = false;
-
 			byte[] objEncoded = encoder.encode(event);
-			if (method.equals("GET") || method.equals("DELETE")) {
-				isOk = sendNoBodyRequest(conn);
-			} else if (method.equals("POST") || method.equals("PUT")) {
-				isOk = sendBodyRequest(objEncoded, conn);
-			}
-
-			if (!isOk) {
-				addError("Not OK");
-			}
+			sendBodyRequest(objEncoded, conn);
 		} catch (IOException e) {
 			addError("Houve um erro na conexão: ", e);
-			e.printStackTrace();
 			reconnect(event);
 		}
 	}
+
+	
 	public Authentication getAuthentication() {
 		return authentication;
 	}
