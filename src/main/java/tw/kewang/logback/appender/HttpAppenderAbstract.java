@@ -70,7 +70,7 @@ public abstract class HttpAppenderAbstract extends UnsynchronizedAppenderBase<IL
 		normalizeContentType();
 		
 		if (encoder == null) {
-			addError("No encoder set for the appender named [" + name + "], please use <encoder> to configure.");
+			addError("No encoder was configured. Use <encoder> to specify the fully qualified class name of the encoder to use");
 			return;
 		}
 		
@@ -83,21 +83,21 @@ public abstract class HttpAppenderAbstract extends UnsynchronizedAppenderBase<IL
 		final String msgUsing = "Using %s: %s";
 		final String msgNotSet = "Assuming default value for %s: %s";
 
-		if (isEmptyOrNull(protocol)) {
+		if (isStringEmptyOrNull(protocol)) {
 			protocol = DEFAULT_PROTOCOL;
 			addInfo(String.format(msgNotSet, "protocol", protocol));
 		} else {
 			addInfo(String.format(msgUsing, "protocol", protocol));
 		}
 
-		if (isEmptyOrNull(url)) {
+		if (isStringEmptyOrNull(url)) {
 			url = DEFAULT_URL;
 			addInfo(String.format(msgNotSet, "url", url));
 		} else {
 			addInfo(String.format(msgUsing, "url", url));
 		}
 		
-		if (isEmptyOrNull(path)) {
+		if (isStringEmptyOrNull(path)) {
 			path = DEFAULT_PATH;
 			addInfo(String.format(msgNotSet, "path", path));
 		} else {
@@ -111,14 +111,14 @@ public abstract class HttpAppenderAbstract extends UnsynchronizedAppenderBase<IL
 			addInfo(String.format(msgUsing, "port", port));
 		}
 
-		if (isEmptyOrNull(contentType)) {
+		if (isStringEmptyOrNull(contentType)) {
 			contentType = DEFAULT_CONTENT_TYPE;
 			addInfo(String.format(msgNotSet, "contentType", contentType));
 		} else {
 			addInfo(String.format(msgUsing, "contentType", contentType));
 		}
 
-		if (isEmptyOrNull(method)) {
+		if (isStringEmptyOrNull(method)) {
 			method = DEFAULT_METHOD;
 			addInfo(String.format(msgNotSet, "method", method));
 		} else {
@@ -336,7 +336,7 @@ public abstract class HttpAppenderAbstract extends UnsynchronizedAppenderBase<IL
 		this.reconnectDelay = reconnectDelay;
 	}
 	
-	protected static boolean isEmptyOrNull(String value){
+	protected static boolean isStringEmptyOrNull(String value){
 		return value == null || value.isEmpty();
 	}
 }

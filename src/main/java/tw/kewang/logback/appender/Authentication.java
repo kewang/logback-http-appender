@@ -20,5 +20,9 @@ public class Authentication {
 	public void setPassword(String password) {
 		this.password = password;
 	}
+	
+	public boolean isConfigured() {
+		return HttpAppenderAbstract.isStringEmptyOrNull(username) == false && HttpAppenderAbstract.isStringEmptyOrNull(password) == false;
+	}
 
 }

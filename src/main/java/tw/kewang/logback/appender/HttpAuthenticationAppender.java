@@ -5,29 +5,32 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 
 import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.net.ssl.SSLConfiguration;
 
 /**
  * Provide basic http authentication.
  * 
- * @author thiago
+ * @author Thiago Diniz da Silveira<thiagods.ti@gmail.com>
  *
  */
 public class HttpAuthenticationAppender extends HttpAppenderAbstract {
 
+	private static final String SEPARATOR_BASIC_AUTHENTICATION = ":";
 	protected Authentication authentication;
-	protected String encondigUserPassword;
+	protected String encondedUserPassword;
+	protected SSLConfiguration sslConfiguration;
 
 	@SuppressWarnings("restriction")
 	@Override
 	public void start() {
 		super.start();
 
-		if (authentication == null || authentication.getUsername() == null || authentication.getPassword() == null) {
-			addError("No set authentication / username / password [" + name + "].");
+		if (authentication == null || authentication.isConfigured() == false) {
+			addError("No authentication was configured. Use <authentication> to specify the <username> and the <password> for Basic Authentication.");
 		}
 
-		String userPassword = authentication.getUsername() + ":" + authentication.getPassword();
-		encondigUserPassword = new sun.misc.BASE64Encoder().encode(userPassword.getBytes());
+		String userPassword = authentication.getUsername() + SEPARATOR_BASIC_AUTHENTICATION + authentication.getPassword();
+		encondedUserPassword = new sun.misc.BASE64Encoder().encode(userPassword.getBytes());
 
 		openConnection();
 		addInfo("Using Basic Authentication");
@@ -40,7 +43,7 @@ public class HttpAuthenticationAppender extends HttpAppenderAbstract {
 			URL urlObj = new URL(protocol, url, port, path);
 			addInfo("URL: " + urlObj.toString());
 			conn = (HttpURLConnection) urlObj.openConnection();
-			conn.setRequestProperty("Authorization", "Basic " + encondigUserPassword);
+			conn.setRequestProperty("Authorization", "Basic " + encondedUserPassword);
 			conn.setRequestMethod(method);
 			return conn;
 		} catch (Exception e) {
@@ -89,6 +92,14 @@ public class HttpAuthenticationAppender extends HttpAppenderAbstract {
 
 	public void setAuthentication(Authentication authentication) {
 		this.authentication = authentication;
+	}
+	
+	public SSLConfiguration getSsl() {
+		return sslConfiguration;
+	}
+	
+	public void setSsl(SSLConfiguration sslConfiguration) {
+		this.sslConfiguration = sslConfiguration;
 	}
 
 }
