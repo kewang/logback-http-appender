@@ -131,17 +131,18 @@ public abstract class HttpAppenderAbstract extends UnsynchronizedAppenderBase<IL
 	public void append(ILoggingEvent event) {
 		try {
 			HttpURLConnection conn = openConnection();
-			transformHeaders(conn);
 			byte[] objEncoded = encoder.encode(event);
+			transformHeaders(conn, objEncoded.length);
 			sendBodyRequest(objEncoded, conn);
 		} catch (IOException e) {
-			addError("Houve um erro na conexão: ", e);
+			addError("Error ocurred during the connection: ", e);
 			reconnect(event);
 		}
 	}
 
-	protected void transformHeaders(HttpURLConnection conn) {
+	protected void transformHeaders(HttpURLConnection conn, int contentLength) {
 		conn.setRequestProperty("Content-Type", contentType);
+		conn.setRequestProperty("Content-length", Integer.toString(contentLength));
 		if (headers == null || headers.isEmpty()) {
 			return;
 		}

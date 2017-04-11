@@ -1,11 +1,7 @@
 package tw.kewang.logback.appender;
 
-import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
-
-import ch.qos.logback.classic.spi.ILoggingEvent;
-import ch.qos.logback.core.net.ssl.SSLConfiguration;
 
 /**
  * Provide basic http authentication.
@@ -19,7 +15,6 @@ public class HttpAuthenticationAppender extends HttpAppenderAbstract {
 	
 	protected Authentication authentication;
 	protected String encondedUserPassword;
-	protected SSLConfiguration sslConfiguration;
 
 	@SuppressWarnings("restriction")
 	@Override
@@ -60,20 +55,6 @@ public class HttpAuthenticationAppender extends HttpAppenderAbstract {
 			}
 		}
 	}
-
-	@Override
-	public void append(ILoggingEvent event) {
-		try {
-			HttpURLConnection conn = openConnection();
-			transformHeaders(conn);
-			byte[] objEncoded = encoder.encode(event);
-			sendBodyRequest(objEncoded, conn);
-		} catch (IOException e) {
-			addError("Houve um erro na conexão: ", e);
-			reconnect(event);
-		}
-	}
-
 	
 	public Authentication getAuthentication() {
 		return authentication;
@@ -81,14 +62,6 @@ public class HttpAuthenticationAppender extends HttpAppenderAbstract {
 
 	public void setAuthentication(Authentication authentication) {
 		this.authentication = authentication;
-	}
-	
-	public SSLConfiguration getSsl() {
-		return sslConfiguration;
-	}
-	
-	public void setSsl(SSLConfiguration sslConfiguration) {
-		this.sslConfiguration = sslConfiguration;
 	}
 
 }
