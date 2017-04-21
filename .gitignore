@@ -83,3 +83,7 @@ hs_err_pid*
 
 ### Custom ###
 *.log
+
+.classpath
+.project
+.settings

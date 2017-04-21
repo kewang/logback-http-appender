@@ -1,212 +1,122 @@
 package tw.kewang.logback.appender;
 
-import ch.qos.logback.classic.spi.ILoggingEvent;
-import ch.qos.logback.core.Layout;
-import ch.qos.logback.core.UnsynchronizedAppenderBase;
-import ch.qos.logback.core.encoder.LayoutWrappingEncoder;
-import org.apache.commons.io.IOUtils;
-import org.json.JSONObject;
-
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.Charset;
 
-public class HttpAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
-    private LayoutWrappingEncoder<ILoggingEvent> encoder;
-    private Layout<ILoggingEvent> layout;
-    private String method;
-    private String url;
-    private String contentType;
-    private String body;
-    private String headers;
+import org.apache.commons.io.IOUtils;
+import org.json.JSONObject;
 
-    @Override
-    public void start() {
-        normalizeMethodName();
-        normalizeContentType();
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.Layout;
+import ch.qos.logback.core.encoder.Encoder;
 
-        if (!checkProperty()) {
-            addError("No set method / url / contentType / body / headers [" + name + "].");
+public class HttpAppender extends HttpAppenderAbstract {
 
-            return;
-        }
+	/**
+	 * Defines default method to send data.
+	 */
+	protected final static String DEFAULT_METHOD = "POST";
 
-        if (encoder == null) {
-            addError("No encoder set for the appender named [" + name + "].");
+	protected Encoder<ILoggingEvent> encoder;
+	protected Layout<ILoggingEvent> layout;
+	protected String method;
 
-            return;
-        }
+	@Override
+	public void start() {
+		normalizeMethodName();
+		
+		super.start();
+	}
+	
+	protected void checkProperties() {
+		if (isStringEmptyOrNull(url)) {
+			url = DEFAULT_URL;
+			addInfo(String.format(MSG_NOT_SET, "url", url));
+		} else {
+			addInfo(String.format(MSG_USING, "url", url));
+		}
+		
+		if (isStringEmptyOrNull(method)) {
+			method = DEFAULT_METHOD;
+			addInfo(String.format(MSG_NOT_SET, "method", method));
+		} else {
+			addInfo(String.format(MSG_USING, "method", method));
+		}
+	}
 
-        try {
-            encoder.init(System.out);
+	@Override
+	public void append(ILoggingEvent event) {
+		createIssue(event);
+	}
 
-            layout = encoder.getLayout();
-        } catch (Exception e) {
-            addError("Exception", e);
-        }
+	public void createIssue(ILoggingEvent event) {
+		HttpURLConnection conn = null;
 
-        super.start();
-    }
+		try {
+			URL urlObj = new URL(url);
+			addInfo("URL: " + url);
+			conn = (HttpURLConnection) urlObj.openConnection();
+			conn.setRequestMethod(method);
+			transformHeaders(conn);
+			boolean isOk = false;
+			byte[] objEncoded = encoder.encode(event);
+			if (method.equals("GET") || method.equals("DELETE")) {
+				isOk = sendNoBodyRequest(conn);
+			} else if (method.equals("POST") || method.equals("PUT")) {
+				isOk = sendBodyRequest(objEncoded, conn);
+			}
 
-    private void normalizeContentType() {
-        if (contentType.equalsIgnoreCase("json")) {
-            contentType = "application/json";
-        } else if (contentType.equalsIgnoreCase("xml")) {
-            contentType = "application/xml";
-        }
-    }
+			if (!isOk) {
+				addError("Not OK");
+				return;
+			}
+		} catch (Exception e) {
+			addError("Exception", e);
+			return;
+		} finally {
+			try {
+				if (conn != null) {
+					conn.disconnect();
+				}
+			} catch (Exception e) {
+				addError("Exception", e);
+				return;
+			}
+		}
+	}
 
-    private void normalizeMethodName() {
-        method = method.toUpperCase();
-    }
+	private void normalizeMethodName() {
+		method = method.toUpperCase();
+	}
 
-    private boolean checkProperty() {
-        return true;
-    }
+	protected void transformHeaders(HttpURLConnection conn) {
+		conn.setRequestProperty("Content-Type", contentType);
+		if (headers == null || headers.isEmpty()) {
+			return;
+		}
 
-    @Override
-    public void append(ILoggingEvent event) {
-        createIssue(event);
-    }
+		JSONObject jObj = new JSONObject(headers);
+		for (String key : jObj.keySet()) {
+			String value = (String) jObj.get(key);
+			conn.setRequestProperty(key, value);
+		}
 
-    private void createIssue(ILoggingEvent event) {
-        HttpURLConnection conn = null;
+	}
 
-        try {
-            URL urlObj = new URL(url);
+	protected boolean sendNoBodyRequest(HttpURLConnection conn) throws IOException {
+		return showResponse(conn);
+	}
 
-            addInfo("URL: " + url);
-
-            conn = (HttpURLConnection) urlObj.openConnection();
-
-            conn.setRequestMethod(method);
-
-            transformHeaders(conn);
-
-            boolean isOk = false;
-
-            if (method.equals("GET") || method.equals("DELETE")) {
-                isOk = sendNoBodyRequest(conn);
-            } else if (method.equals("POST") || method.equals("PUT")) {
-                isOk = sendBodyRequest(conn);
-            }
-
-            if (!isOk) {
-                addError("Not OK");
-
-                return;
-            }
-        } catch (Exception e) {
-            addError("Exception", e);
-
-            return;
-        } finally {
-            try {
-                if (conn != null) {
-                    conn.disconnect();
-                }
-            } catch (Exception e) {
-                addError("Exception", e);
-
-                return;
-            }
-        }
-    }
-
-    private void transformHeaders(HttpURLConnection conn) {
-        JSONObject jObj = new JSONObject(headers);
-
-        for (String key : jObj.keySet()) {
-            String value = (String) jObj.get(key);
-
-            conn.setRequestProperty(key, value);
-        }
-
-        conn.setRequestProperty("Content-Type", contentType);
-    }
-
-    private boolean sendNoBodyRequest(HttpURLConnection conn) throws IOException {
-        return showResponse(conn);
-    }
-
-    private boolean sendBodyRequest(HttpURLConnection conn) throws IOException {
-        conn.setDoOutput(true);
-
-        addInfo("Body: " + body);
-
-        IOUtils.write(body, conn.getOutputStream(), Charset.defaultCharset());
-
-        return showResponse(conn);
-    }
-
-    private boolean showResponse(HttpURLConnection conn) throws IOException {
-        int responseCode = conn.getResponseCode();
-
-        if (responseCode != HttpURLConnection.HTTP_OK) {
-            return false;
-        }
-
-        String response = IOUtils.toString(conn.getInputStream(), Charset.defaultCharset());
-
-        addInfo(response);
-
-        return true;
-    }
-
-    public Layout<ILoggingEvent> getLayout() {
-        return layout;
-    }
-
-    public void setLayout(Layout<ILoggingEvent> layout) {
-        this.layout = layout;
-    }
-
-    public LayoutWrappingEncoder<ILoggingEvent> getEncoder() {
-        return encoder;
-    }
-
-    public void setEncoder(LayoutWrappingEncoder<ILoggingEvent> encoder) {
-        this.encoder = encoder;
-    }
-
-    public String getMethod() {
-        return method;
-    }
-
-    public void setMethod(String method) {
-        this.method = method;
-    }
-
-    public String getUrl() {
-        return url;
-    }
-
-    public void setUrl(String url) {
-        this.url = url;
-    }
-
-    public String getContentType() {
-        return contentType;
-    }
-
-    public void setContentType(String contentType) {
-        this.contentType = contentType;
-    }
-
-    public String getBody() {
-        return body;
-    }
-
-    public void setBody(String body) {
-        this.body = body;
-    }
-
-    public String getHeaders() {
-        return headers;
-    }
-
-    public void setHeaders(String headers) {
-        this.headers = headers;
-    }
+	protected boolean sendBodyRequest(byte[] objEncoded, HttpURLConnection conn) throws IOException {
+		conn.setDoOutput(true);
+		if (body != null) {
+			addInfo("Body: " + body);
+			IOUtils.write(body, conn.getOutputStream(), Charset.defaultCharset());
+		} else {
+			IOUtils.write(objEncoded, conn.getOutputStream());
+		}
+		return showResponse(conn);
+	}
 }
