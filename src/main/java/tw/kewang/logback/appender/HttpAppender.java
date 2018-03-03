@@ -21,7 +21,7 @@ public class HttpAppender extends HttpAppenderAbstract {
 
 	protected Encoder<ILoggingEvent> encoder;
 	protected Layout<ILoggingEvent> layout;
-	protected String method;
+	protected String method = "POST";
 
 	@Override
 	public void start() {
