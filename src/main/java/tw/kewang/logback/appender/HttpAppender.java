@@ -19,9 +19,7 @@ public class HttpAppender extends HttpAppenderAbstract {
 	 */
 	protected final static String DEFAULT_METHOD = "POST";
 
-	protected Encoder<ILoggingEvent> encoder;
-	protected Layout<ILoggingEvent> layout;
-	protected String method;
+	protected String method = "POST";
 
 	@Override
 	public void start() {
